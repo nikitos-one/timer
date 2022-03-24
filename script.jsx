@@ -2,23 +2,32 @@ class TimerWrapper extends React.Component {
     constructor(props) {
         super(props)
         this.state = {
-            timerLeft: null,
+            timeLeft: null,
             timer: null,
             pause: false,
             reset: false
         }
         this.startTimer = this.startTimer.bind(this)
-        this.pauseTimer = this.pauseTimer.bind(this)
+        this.controlTimer = this.controlTimer.bind(this)
     }
 
     startTimer(timeLeft) {
         clearInterval(this.state.timer)
+
+        // resetTimer
+        if(this.state.reset) {
+            return this.setState({
+                timeLeft: null,
+                timer: null,
+                pause: false,
+                reset: false
+            })
+        }
+        // pauseTimer
+        if(this.state.pause) return
+
         let timer = setInterval(()=> {
             console.log('2: Inside of setInterval')
-            if(this.state.pause) {
-                clearInterval(this.state.timer)
-                return
-            }
             var timeLeft = this.state.timeLeft - 1
             if(timeLeft == 0) {
                 clearInterval(timer)
@@ -35,14 +44,9 @@ class TimerWrapper extends React.Component {
         })
     }
 
-    pauseTimer (timeLeft) {
-        this.setState({
-            pause: !this.state.pause
-        })
-        console.log(this.state.timeLeft)
-        if(this.state.pause) {
-            this.startTimer(this.state.timeLeft)
-        }
+    async controlTimer (action) {
+        await this.setState({ [action]: !this.state[action] })
+        this.startTimer(this.state.timeLeft)
     }
 
     render() {
@@ -54,7 +58,18 @@ class TimerWrapper extends React.Component {
                     <Button time="10" startTimer={this.startTimer}></Button>
                     <Button time="15" startTimer={this.startTimer}></Button>
                 </div>
-                <Pause timeLeft = {this.state.timeLeft} pauseState={this.state.pause} pauseTimer={this.pauseTimer}></Pause>
+                <ControlButton timeLeft={this.state.timeLeft}
+                               state={this.state.pause}
+                               event={this.controlTimer}
+                               action='pause'
+                               icon="bi-pause">
+                </ControlButton>
+                <ControlButton timeLeft={this.state.timeLeft}
+                               state={this.state.reset}
+                               event={this.controlTimer}
+                               action='reset'
+                               icon="bi-arrow-clockwise">
+                </ControlButton>
                 <Timer timeLeft = {this.state.timeLeft}/>
                 <audio id="end-of-time" src="timer_flute_c_long_01.wav" preload="auto"></audio>
             </div>
@@ -79,20 +94,18 @@ const Button = (props) => {
     )
 }
 
-const Pause = (props) => {
+const ControlButton = (props) => {
     if(props.timeLeft == null || props.timeLeft == 0) {
         return <div/>
     }
-    let className = (props.pauseState ? 'btn-success' : 'btn-outline-danger') + ' btn rounded-circle mx-2 p-0'
+    let ButtonClassName = (props.state ? 'btn-success' : 'btn-outline-danger') + ' btn rounded-circle mx-2 p-0'
+    let IconClassName = props.icon + ' bi'
     return (
         <button type="button"
-            className={className}
-            onClick={()=>{props.pauseTimer(props.time)}}>
-            <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" fill="currentColor" className="bi bi-pause"
-                 viewBox="0 0 512 512">
-                <path d="M162.642 148.337h56.034v215.317h-56.034v-215.316z"/>
-                <path d="M293.356 148.337h56.002v215.317h-56.002v-215.316z"/>
-            </svg>
+            className={ButtonClassName}
+            style={{width: 30, height: 30}}
+            onClick={()=>{props.event(props.action)}}>
+            <i className={IconClassName}></i>
         </button>
     )
 }
